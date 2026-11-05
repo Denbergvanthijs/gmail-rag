@@ -12,4 +12,17 @@ ignore = [
     "D203",   # Requires a blank line before class docstrings; conflicts with D211, and this project uses D211's style.
     "D213",   # Requires a summary on the second docstring line; conflicts with D212, and this project uses D212's style.
     "COM812", # Requires trailing commas; disabled because it conflicts with Ruff's formatter, which handles comma placement.
+    "D100",   # Missing docstring in public module
+    "CPY001", # Missing copyright notice at top of file
+    "T201",   # print is the intended output of these CLI scripts
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "S101",    # assert is how pytest checks
+    "D103",    # test functions need no docstring
+    "ANN",     # annotations add nothing in tests
+    "PLR2004", # magic values are fine in assertions
+    "INP001",  # tests are not a package
+]
+"quickstart.py" = ["ALL"] # Google's sample, kept as-is for reference

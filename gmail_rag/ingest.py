@@ -1,7 +1,8 @@
 import base64
-import os.path
 import sqlite3
 import sys
+from pathlib import Path
+from typing import Any
 
 import ollama
 import sqlite_vec
@@ -17,10 +18,10 @@ DIM = 384
 MAX_CHARS = 2000
 
 
-def get_service():
-    creds = None
-    if os.path.exists("./secrets/token.json"):
-        creds = Credentials.from_authorized_user_file("./secrets/token.json", SCOPES)
+def get_service() -> Any:  # noqa: ANN401 - googleapiclient builds its Resource methods dynamically
+    """Authenticate with Gmail (OAuth, cached in secrets/token.json) and return the API service."""
+    token_path = Path("./secrets/token.json")
+    creds = Credentials.from_authorized_user_file(str(token_path), SCOPES) if token_path.exists() else None
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -29,20 +30,20 @@ def get_service():
             flow = InstalledAppFlow.from_client_secrets_file("./secrets/credentials.json", SCOPES)
             creds = flow.run_local_server(port=0)
 
-        with open("./secrets/token.json", "w") as token:
-            token.write(creds.to_json())
+        token_path.write_text(creds.to_json(), encoding="utf-8")
 
     return build("gmail", "v1", credentials=creds)
 
 
-def open_db(path="./data/emails.db"):
+def open_db(path: str = "./data/emails.db") -> sqlite3.Connection:
+    """Open (and create if needed) the email database with the sqlite-vec extension loaded."""
     if path != ":memory:":
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
 
     db = sqlite3.connect(path)
-    db.enable_load_extension(True)
+    db.enable_load_extension(True)  # noqa: FBT003
     sqlite_vec.load(db)
-    db.enable_load_extension(False)
+    db.enable_load_extension(False)  # noqa: FBT003
 
     db.execute(
         "CREATE TABLE IF NOT EXISTS emails (rowid INTEGER PRIMARY KEY, id TEXT UNIQUE, subject TEXT, sender TEXT, date TEXT, body TEXT)"
@@ -52,7 +53,7 @@ def open_db(path="./data/emails.db"):
     return db
 
 
-def extract_body(payload):
+def extract_body(payload: dict[str, Any]) -> str:
     """Return the first text/plain part of a Gmail message payload, decoded."""
     data = payload.get("body", {}).get("data")
 
@@ -69,7 +70,8 @@ def extract_body(payload):
     return ""
 
 
-def parse_message(msg):
+def parse_message(msg: dict[str, Any]) -> dict[str, str]:
+    """Reduce a full Gmail message to id, subject, sender, date and plain-text body."""
     headers = {h["name"].lower(): h["value"] for h in msg["payload"].get("headers", [])}
 
     return {
@@ -81,7 +83,8 @@ def parse_message(msg):
     }
 
 
-def store(db, mail, embedding):
+def store(db: sqlite3.Connection, mail: dict[str, str], embedding: list[float]) -> None:
+    """Insert a mail and its embedding; mails that are already stored are ignored."""
     cur = db.execute(
         "INSERT OR IGNORE INTO emails (id, subject, sender, date, body) VALUES (?, ?, ?, ?, ?)",
         (mail["id"], mail["subject"], mail["sender"], mail["date"], mail["body"]),
@@ -95,13 +98,15 @@ def store(db, mail, embedding):
     db.commit()
 
 
-def embed(mail):
+def embed(mail: dict[str, str]) -> list[float]:
+    """Embed subject and body with the Ollama model."""
     text = f"{mail['subject']}\n{mail['body']}"[:MAX_CHARS]
 
     return ollama.embed(model=MODEL, input=text)["embeddings"][0]
 
 
-def ingest(max_results=20, db_path="./data/emails.db"):
+def ingest(max_results: int = 20, db_path: str = "./data/emails.db") -> None:
+    """Fetch the latest mails from Gmail, embed the new ones and store them."""
     service = get_service()
     db = open_db(db_path)
 

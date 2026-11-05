@@ -1,10 +1,14 @@
 import struct
 import sys
+from typing import TYPE_CHECKING, Any
 
 from gmail_rag.ingest import open_db
 
+if TYPE_CHECKING:
+    import sqlite3
 
-def sample(db, n):
+
+def sample(db: sqlite3.Connection, n: int) -> list[dict[str, Any]]:
     """Return n random emails with their stored embedding, to eyeball ingest results."""
     rows = db.execute(
         "SELECT e.rowid, e.id, e.subject, e.sender, e.date, e.body, v.embedding "
@@ -12,10 +16,11 @@ def sample(db, n):
         (n,),
     ).fetchall()
 
-    return [dict(zip(("rowid", "id", "subject", "sender", "date", "body", "embedding"), r)) for r in rows]
+    return [dict(zip(("rowid", "id", "subject", "sender", "date", "body", "embedding"), r, strict=True)) for r in rows]
 
 
-def main(n=5, db_path="./data/emails.db"):
+def main(n: int = 5, db_path: str = "./data/emails.db") -> None:
+    """Print the totals and n random stored emails."""
     db = open_db(db_path)
     total = db.execute("SELECT count(*) FROM emails").fetchone()[0]
     vectors = db.execute("SELECT count(*) FROM vec_emails").fetchone()[0]
