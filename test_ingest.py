@@ -19,14 +19,18 @@ def test_parse_message_nested_multipart():
             "parts": [{"mimeType": "text/plain", "body": {"data": b64("hello")}}],
         },
     }
+
     mail = parse_message(msg)
+
     assert (mail["subject"], mail["sender"], mail["body"]) == ("Hi", "a@b.c", "hello")
 
 
 def test_store_is_idempotent_and_searchable():
     db = open_db(":memory:")
     mail = {"id": "1", "subject": "s", "sender": "x", "date": "d", "body": "b"}
+
     store(db, mail, [0.1] * DIM)
     store(db, mail, [0.1] * DIM)
+
     assert db.execute("SELECT count(*) FROM emails").fetchone()[0] == 1
     assert db.execute("SELECT count(*) FROM vec_emails").fetchone()[0] == 1

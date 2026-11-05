@@ -13,3 +13,14 @@
 - Use **Graphify** to understand code relationships and **Ponytail** to identify and remove unnecessary complexity.
 - Follow existing project conventions. Prefer simple solutions over unnecessary abstractions and dependencies.
 - See `./github/copilot-instructions.md` and `README.md` for further instructions and guidance.
+
+## Code formatting
+
+- Use blank lines to separate logically distinct blocks of code.
+- Add a blank line after completed control-flow blocks (`if/else`,
+  `for`, `while`, `try/except`) when subsequent statements represent
+  a new logical step.
+- Separate variable initialization, conditional logic, processing,
+  and return statements with blank lines where appropriate.
+- Avoid unnecessary blank lines within closely related statements.
+- Follow PEP 8 and Ruff formatting conventions.
