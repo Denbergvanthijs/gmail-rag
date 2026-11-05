@@ -38,8 +38,8 @@ def get_service():
 def open_db(path="./data/emails.db"):
     if path != ":memory:":
         os.makedirs(os.path.dirname(path), exist_ok=True)
-    db = sqlite3.connect(path)
 
+    db = sqlite3.connect(path)
     db.enable_load_extension(True)
     sqlite_vec.load(db)
     db.enable_load_extension(False)
