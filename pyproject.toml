@@ -1,3 +1,15 @@
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D203",   # Requires a blank line before class docstrings; conflicts with D211, and this project uses D211's style.
+    "D213",   # Requires a summary on the second docstring line; conflicts with D212, and this project uses D212's style.
+    "COM812", # Requires trailing commas; disabled because it conflicts with Ruff's formatter, which handles comma placement.
+]

@@ -21,5 +21,5 @@ python -m pytest
 python -m pytest --cov --cov-report=term-missing
 python -m ruff check . --fix
 python -m ruff format .
-python -m ty check
+python -m ty check .
 ```
