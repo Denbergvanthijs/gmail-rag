@@ -36,7 +36,8 @@ def get_service():
 
 
 def open_db(path="./data/emails.db"):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    if path != ":memory:":
+        os.makedirs(os.path.dirname(path), exist_ok=True)
     db = sqlite3.connect(path)
 
     db.enable_load_extension(True)
@@ -100,7 +101,7 @@ def embed(mail):
     return ollama.embed(model=MODEL, input=text)["embeddings"][0]
 
 
-def ingest(max_results=10, db_path="./data/emails.db"):
+def ingest(max_results=20, db_path="./data/emails.db"):
     service = get_service()
     db = open_db(db_path)
 
@@ -113,9 +114,11 @@ def ingest(max_results=10, db_path="./data/emails.db"):
         # Gather the full message details from the Gmail API
         msg = service.users().messages().get(userId="me", id=ref["id"], format="full").execute()
         mail = parse_message(msg)
-        store(db, mail, embed(mail))
+        mail_embedding = embed(mail)
+
+        store(db, mail, mail_embedding)
         print(f"Stored: {mail['subject']}")
 
 
 if __name__ == "__main__":
-    ingest(int(sys.argv[1]) if len(sys.argv) > 1 else 10)
+    ingest(int(sys.argv[1]) if len(sys.argv) > 1 else 20)

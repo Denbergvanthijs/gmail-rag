@@ -1,6 +1,6 @@
 import base64
 
-from ingest import DIM, open_db, parse_message, store
+from gmail_rag.ingest import DIM, open_db, parse_message, store
 
 
 def b64(s):
